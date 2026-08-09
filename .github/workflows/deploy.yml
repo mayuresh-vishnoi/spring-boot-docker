@@ -39,7 +39,7 @@ jobs:
         run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
 
       - name: connecting ec2
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1
         with:
           host: {{secrets.EC2_HOSTS}}
           username: {{secrets.EC2_USER}}
