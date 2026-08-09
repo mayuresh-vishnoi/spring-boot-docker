@@ -1,0 +1,51 @@
+name: spring boot app build and deploy
+
+
+on:
+  push:
+    branches:
+      - main
+env:
+  IMAGE_NAME: spring-boot-app
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu:latest
+
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v4
+
+      - name: setting up java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: building jar
+        run: mvn clean package -DskipTests
+
+      - name: building docker image
+        run: docker build -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+
+      - name: connecting to docker
+        uses: docker/login-action@v4
+        with:
+          username: secrets.DOCKER_USERNAME
+          password: secrets.DOCKER_PASSWORD
+
+      - name: pushing docker image
+        run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+
+      - name: connecting ec2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: {{secrets.EC2_HOSTS}}
+          username: {{secrets.EC2_USER}}
+          key: {{secrets.EC2_PASSWORD}}
+        script: |
+         docker pull ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+         docker stop ${{env.IMAGE_NAME}} || true
+         docker rm ${{env.IMAGE_NAME}} || true
+         docker run -p 8992:8992 ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
