@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-deploy:
-    runs-on: ubuntu:latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: checkout source
@@ -27,25 +27,25 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: building docker image
-        run: docker build -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
 
       - name: connecting to docker
         uses: docker/login-action@v4
         with:
-          username: secrets.DOCKER_USERNAME
-          password: secrets.DOCKER_PASSWORD
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: pushing docker image
-        run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
       - name: connecting ec2
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: {{secrets.EC2_HOSTS}}
-          username: {{secrets.EC2_USER}}
-          key: {{secrets.EC2_PASSWORD}}
-        script: |
-         docker pull ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
-         docker stop ${{env.IMAGE_NAME}} || true
-         docker rm ${{env.IMAGE_NAME}} || true
-         docker run -p 8992:8992 ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+          host: ${{ secrets.EC2_HOSTS }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PASSWORD }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            docker stop ${{ env.IMAGE_NAME }} || true
+            docker rm ${{ env.IMAGE_NAME }} || true
+            docker run -p 8992:8992 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
